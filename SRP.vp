@@ -1,0 +1,73 @@
+attacker[active]
+
+principal Server[]
+principal Client[]
+
+principal Client[
+    knows private I
+    knows private p
+    generates s
+    x = HASH(s, p)
+    v = G^x
+]
+
+Client -> Server: v, s
+
+principal Client[
+    generates a
+    A = G^a 
+    sigC = SIGN(p, A)
+]
+
+Client -> Server: I, A, sigC 
+
+principal Server[
+    knows private N, p
+    //N = 2*q + 1
+    k = HASH(N, G)
+    generates b
+    B = (G^b + k*v)
+    validateS = SIGNVERIF(G^p, A, sigC)
+    sigS = SIGN(N, B)
+]
+
+Server -> Client: s, B, sigS 
+
+principal Client[
+    knows private N
+    u = HASH(A,B)
+    validateC = SIGNVERIF(G^N, B, sigS)
+]
+
+principal Server[
+    u = HASH(A,B)
+]
+
+principal Client[
+    knows private k
+    Sc = (B - k*G^x)^(a + u*x)
+    Kc = HASH(Sc)
+]
+
+principal Server[
+    Ss = (A*v^u)^b 
+    Ks = H(Ss)
+]
+
+principal Client[
+    M1 = HASH(CONCAT(A, B, Sk))
+]
+
+Client -> Server: M1
+
+principal Server[
+    M2 = HASH(CONCAT(A, M1, Ss))
+]
+
+Server -> Client: M2
+
+queries[
+    authentication? Client -> Server: M1
+    authentication? Server -> Client: M2
+    confidentiality? M1
+]

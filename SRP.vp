@@ -1,73 +1,50 @@
 attacker[active]
 
-principal Server[]
-principal Client[]
+principal Alice[] //in our description tis is Client
+principal Bob[] // in our description this is Server
 
-principal Client[
-    knows private I
-    knows private p
-    generates s
+principal Alice
+[
+    generates a, s //generates a and salt
+    knows private skA, p, I//knows secret key, password and user name
+    ga = G^a //Diffie-Helman key
     x = HASH(s, p)
     v = G^x
+    sigA = sign(skA, ga) //siganture key - private key and message
 ]
 
-Client -> Server: v, s
+Alice -> Bob: ga, sigA, v,s, I
 
-principal Client[
-    generates a
-    A = G^a 
-    sigC = SIGN(p, A)
-]
-
-Client -> Server: I, A, sigC 
-
-principal Server[
-    knows private N, p
-    //N = 2*q + 1
+principal Bob
+[
+    generates b, N //generate b and N- big prime number
+    knows private skB, skA //knows secret key Bob's and Alice's
+    validateB = SIGNVERIF(G^skA, ga, sigA)? //verifies signature 
+    gb = G^b //Diffie-Helman key
     k = HASH(N, G)
-    generates b
-    B = (G^b + k*v)
-    validateS = SIGNVERIF(G^p, A, sigC)
-    sigS = SIGN(N, B)
+    sigB = SIGN(skB, gb) //siganture key - private key and message
+    u=HASH(ga,gb) //both Bob and Alice calculate this
 ]
 
-Server -> Client: s, B, sigS 
+Bob -> Alice: gb, sigB, u
 
-principal Client[
-    knows private N
-    u = HASH(A,B)
-    validateC = SIGNVERIF(G^N, B, sigS)
+principal Alice
+[
+    knows private skB
+    generates sa, pt1
+    validateA = SIGNVERIF(G^skB, gb, sigB)? //verifies signature
+    M1=ENC(HASH(CONCAT(ga,gb,Sa)),pt1) // symetric encyryption of hash, proof keys match
 ]
 
-principal Server[
-    u = HASH(A,B)
+Alice -> Bob: M1
+principal Bob[
+    generates sb
+    M2=DEC(HASH(CONCAT(ga,M1,Sb)),M1) //symetric decyryption of hash, proof keys match
 ]
 
-principal Client[
-    knows private k
-    Sc = (B - k*G^x)^(a + u*x)
-    Kc = HASH(Sc)
-]
-
-principal Server[
-    Ss = (A*v^u)^b 
-    Ks = H(Ss)
-]
-
-principal Client[
-    M1 = HASH(CONCAT(A, B, Sk))
-]
-
-Client -> Server: M1
-
-principal Server[
-    M2 = HASH(CONCAT(A, M1, Ss))
-]
-
-Server -> Client: M2
-
-queries[
-    authentication? Client -> Server: M1
-    authentication? Server -> Client: M2
-    confidentiality? M1
+queries
+[
+   authentication? Alice -> Bob: M1
+    authentication? Bob -> Alice: sigB
+    confidentiality?  pt1 //poufnosć
 ]

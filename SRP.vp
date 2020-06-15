@@ -1,12 +1,12 @@
 attacker[active]
-
+//all  operations are moduloN (in N ring of integers)
 principal Alice[] //in our description tis is Client
-principal Bob[] // in our description this is Server
+principal Bob[] // in pur description this is Server
 
 principal Alice
 [
     generates a, s //generates a and salt
-    knows private skA, p, I//knows secret key, password and user name
+    knows private skA, p, I //knows secret key, password and user name
     ga = G^a //Diffie-Helman key
     x = HASH(s, p)
     v = G^x
@@ -17,34 +17,34 @@ Alice -> Bob: ga, sigA, v,s, I
 
 principal Bob
 [
-    generates b, N //generate b and N- big prime number
-    knows private skB, skA //knows secret key Bob's and Alice's
+    generates b, N //generate b and N- big prime number , N= 2*q+1 where q is the prime number - verifpal can't make this
+    knows private skB, skA //knows secret key Bob and Alice's, 
     validateB = SIGNVERIF(G^skA, ga, sigA)? //verifies signature 
-    gb = G^b //Diffie-Helman key
+    gb = G^b //Diffie-Helman key  gb = B = k*v+G^b but verifpal can't make this
     k = HASH(N, G)
     sigB = SIGN(skB, gb) //siganture key - private key and message
-    u=HASH(ga,gb) //both Bob and Alice calculate this
+    u=HASH(ga,gb) //both bob and Alice calculate this
 ]
 
-Bob -> Alice: gb, sigB, u
+Bob -> Alice: gb, sigB, u //u should be calculated directely by Alice but in verifpal we can't calculate one u twice
 
 principal Alice
 [
-    knows private skB
-    generates sa, pt1
+    knows private skB 
+    generates Sa, pt1 //sa=SKlient = (B − kg^x)^(a + ux) = (kv + g^b − kg^x)^(a + ux) = (kg^x − kg^x + g^b)^(a + ux) = (g^b)^(a + ux) - verifpal can't make this 
     validateA = SIGNVERIF(G^skB, gb, sigB)? //verifies signature
-    M1=ENC(HASH(CONCAT(ga,gb,Sa)),pt1) // symetric encyryption of hash, proof keys match
+    M1=ENC(HASH(CONCAT(ga,gb,Sa)),pt1 )// symetric encyryption of hash, proof keys match
 ]
 
 Alice -> Bob: M1
 principal Bob[
-    generates sb
-    M2=DEC(HASH(CONCAT(ga,M1,Sb)),M1) //symetric decyryption of hash, proof keys match
+    generates Sb //sb=SSerwer = (Av^u)^b = (g^av^u)^b = [g^a(g^x)^u]^b = (g^(a + ux))^b = (g^b)^(a + ux) - verifpal can't make this
+    M2=DEC(HASH(CONCAT(ga,M1,Sb)),M1) // symetric decyryption of hash, proof keys match
 ]
 
 queries
 [
-   authentication? Alice -> Bob: M1
+    authentication? Alice -> Bob: M1
     authentication? Bob -> Alice: sigB
     confidentiality?  pt1 //poufnosć
 ]
